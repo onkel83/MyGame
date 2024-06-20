@@ -1,4 +1,5 @@
 ﻿using System;
+using Core.Enum;
 
 namespace Core.Model
 {
@@ -6,7 +7,7 @@ namespace Core.Model
     {
         public DateTime LogTime { get; set; } = DateTime.Now;
         public string Message { get; set; } = string.Empty;
-        public Core.Enum.LogLevel Level { get; set; }
+        public LogLevel Level { get; set; } = LogLevel.Dbug;
         public string Caller { get; set; } = string.Empty;
         public int LineNumber { get; set; } = 0;
 

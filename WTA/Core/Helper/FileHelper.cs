@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Core.Enum;
-using Core.Log;
 using Core.Model;
 using Newtonsoft.Json;
+using Core.Log;
+using Core.Enum;
 
 namespace Core.Helper
 {
@@ -15,7 +15,7 @@ namespace Core.Helper
             EnsureDirectoryExists(logDirectory);
             string fileName = $"{logDirectory}/{DateTime.Now:yyyy-MM}.log";
             string jsonEntry = JsonConvert.SerializeObject(entry) + Environment.NewLine;
-            File.AppendAllText(fileName, jsonEntry);
+            File.AppendAllText(fileName, jsonEntry); // Anhängen an die vorhandene Datei
         }
 
         public static List<LogEntry> ReadLogEntries(string logDirectory, DateTime? start = null, DateTime? end = null, LogLevel? level = null)
@@ -30,7 +30,7 @@ namespace Core.Helper
                     LogEntry entry = JsonConvert.DeserializeObject<LogEntry>(line)??new LogEntry();
                     if ((!start.HasValue || entry.LogTime >= start.Value) &&
                         (!end.HasValue || entry.LogTime <= end.Value) &&
-                        (!level.HasValue || entry.Level == level.Value))
+                        (!level.HasValue || entry.Level == level.Value) && entry != null)
                     {
                         logEntries.Add(entry);
                     }

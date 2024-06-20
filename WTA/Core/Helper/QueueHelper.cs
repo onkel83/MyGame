@@ -1,4 +1,5 @@
 ﻿using Core.Model;
+using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
@@ -13,12 +14,18 @@ namespace Core.Helper
             LogQueue.Enqueue(entry);
         }
 
-        public static async Task ProcessQueue(string logDirectory)
+        public static Task? ProcessQueue(string logDirectory)
         {
+
             while (LogQueue.TryDequeue(out LogEntry entry))
             {
-                FileHelper.WriteLogEntry(entry, logDirectory);
+                Task.Run(() =>
+                {
+                    FileHelper.WriteLogEntry(entry, logDirectory);
+
+                }).Wait();
             }
+            return null;
         }
     }
 }
