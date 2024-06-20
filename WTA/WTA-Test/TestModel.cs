@@ -12,6 +12,6 @@ namespace WTA_Test
 
         public decimal Pause { get; set; } = 0;
 
-        public double WorkTime { get => (Ende - Start).TotalHours - ((double)Pause); }
+        public double WorkTime { get => Math.Round((Ende - Start).TotalHours - ((double)Pause),2); }
     }
 }

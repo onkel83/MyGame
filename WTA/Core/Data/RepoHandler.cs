@@ -50,7 +50,14 @@ namespace Core.Data
                 {
                     lock (_lock)
                     {
-                        action();
+                        try
+                        {
+                            action();
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Instance.Log($"Error processing queue action: {ex.Message}", LogLevel.Crit);
+                        }
                     }
                 }
                 else
@@ -64,11 +71,18 @@ namespace Core.Data
         {
             Enqueue(() =>
             {
-                item.ID = _nextId.ToString("D6");
-                _nextId++;
-                _items.Add(item);
-                Save();
-                Logger.Instance.Log($"Created item with ID: {item.ID}", LogLevel.Info);
+                try
+                {
+                    item.ID = _nextId.ToString("D6");
+                    _nextId++;
+                    _items.Add(item);
+                    Save();
+                    Logger.Instance.Log($"Created item with ID: {item.ID}", LogLevel.Info);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Log($"Error creating item: {ex.Message}", LogLevel.Crit);
+                }
             });
         }
 
@@ -76,13 +90,20 @@ namespace Core.Data
         {
             Enqueue(() =>
             {
-                var existingItem = _items.FirstOrDefault(i => i.ID == item.ID);
-                if (existingItem != null)
+                try
                 {
-                    _items.Remove(existingItem);
-                    _items.Add(item);
-                    Save();
-                    Logger.Instance.Log($"Updated item with ID: {item.ID}", LogLevel.Info);
+                    var existingItem = _items.FirstOrDefault(i => i.ID == item.ID);
+                    if (existingItem != null)
+                    {
+                        _items.Remove(existingItem);
+                        _items.Add(item);
+                        Save();
+                        Logger.Instance.Log($"Updated item with ID: {item.ID}", LogLevel.Info);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Log($"Error updating item: {ex.Message}", LogLevel.Crit);
                 }
             });
         }
@@ -91,12 +112,19 @@ namespace Core.Data
         {
             Enqueue(() =>
             {
-                var item = _items.FirstOrDefault(i => i.ID == id);
-                if (item != null)
+                try
                 {
-                    _items.Remove(item);
-                    Save();
-                    Logger.Instance.Log($"Deleted item with ID: {item.ID}", LogLevel.Info);
+                    var item = _items.FirstOrDefault(i => i.ID == id);
+                    if (item != null)
+                    {
+                        _items.Remove(item);
+                        Save();
+                        Logger.Instance.Log($"Deleted item with ID: {item.ID}", LogLevel.Info);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Log($"Error deleting item: {ex.Message}", LogLevel.Crit);
                 }
             });
         }
@@ -129,15 +157,22 @@ namespace Core.Data
         {
             Enqueue(() =>
             {
-                _items = _items.OrderBy(i => Convert.ToInt32(i.ID)).ToList();
-                _nextId = 1;
-                foreach (var item in _items)
+                try
                 {
-                    item.ID = _nextId.ToString("D6");
-                    _nextId++;
+                    _items = _items.OrderBy(i => Convert.ToInt32(i.ID)).ToList();
+                    _nextId = 1;
+                    foreach (var item in _items)
+                    {
+                        item.ID = _nextId.ToString("D6");
+                        _nextId++;
+                    }
+                    Save();
+                    Logger.Instance.Log("Reset IDs and redistributed them.", LogLevel.Info);
                 }
-                Save();
-                Logger.Instance.Log("Reset IDs and redistributed them.", LogLevel.Info);
+                catch (Exception ex)
+                {
+                    Logger.Instance.Log($"Error resetting IDs: {ex.Message}", LogLevel.Crit);
+                }
             });
         }
 
@@ -152,10 +187,17 @@ namespace Core.Data
 
             lock (_lock)
             {
-                string json = File.ReadAllText(_filePath);
-                _items = JsonConvert.DeserializeObject<List<T>>(json) ?? new List<T>();
-                ResetIds();
-                Logger.Instance.Log($"Loaded data from {_filePath}", LogLevel.Info);
+                try
+                {
+                    string json = File.ReadAllText(_filePath);
+                    _items = JsonConvert.DeserializeObject<List<T>>(json) ?? new List<T>();
+                    ResetIds();
+                    Logger.Instance.Log($"Loaded data from {_filePath}", LogLevel.Info);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Log($"Error loading data: {ex.Message}", LogLevel.Crit);
+                }
             }
         }
 
@@ -163,9 +205,16 @@ namespace Core.Data
         {
             lock (_lock)
             {
-                string json = JsonConvert.SerializeObject(_items, Formatting.Indented);
-                File.WriteAllText(_filePath, json);
-                Logger.Instance.Log($"Saved data to {_filePath}", LogLevel.Info);
+                try
+                {
+                    string json = JsonConvert.SerializeObject(_items, Formatting.Indented);
+                    File.WriteAllText(_filePath, json);
+                    Logger.Instance.Log($"Saved data to {_filePath}", LogLevel.Info);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Log($"Error saving data: {ex.Message}", LogLevel.Crit);
+                }
             }
         }
 
