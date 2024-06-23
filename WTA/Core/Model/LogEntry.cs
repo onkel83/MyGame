@@ -1,5 +1,5 @@
-﻿using System;
-using Core.Enums;
+﻿using Core.Helper;
+using System;
 
 namespace Core.Model
 {
@@ -10,10 +10,5 @@ namespace Core.Model
         public LogLevel Level { get; set; } = LogLevel.Dbug;
         public string Caller { get; set; } = string.Empty;
         public int LineNumber { get; set; } = 0;
-
-        public override string ToString()
-        {
-            return $"{LogTime:HH:mm dd.MM.yyyy} [{Level}] {Message} (Caller: {Caller}, Line: {LineNumber})";
-        }
     }
 }

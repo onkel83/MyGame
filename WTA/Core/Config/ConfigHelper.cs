@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.IO;
 using Newtonsoft.Json;
-using Core.Enums;
+
 
 namespace Core.Helper
 {
@@ -85,13 +85,18 @@ namespace Core.Helper
             }
         }
 
-        public static string GetConfigValue(string configName, string key)
+        public static string GetConfigValue(string configName, string key, string? defaultValue = null)
         {
             try
             {
                 if (_Configs.TryGetValue(configName, out var config) && config.TryGetValue(key, out var value))
                 {
                     return value;
+                }
+                else
+                {
+                    SetConfigValue(configName, key, defaultValue??string.Empty);
+                    return defaultValue ?? string.Empty;
                 }
             }
             catch (Exception ex)

@@ -5,7 +5,6 @@ using System.Linq;
 using Newtonsoft.Json;
 using Core.Helper;
 using Core.Model;
-using Core.Enums;
 
 namespace Core.Data
 {
@@ -16,8 +15,8 @@ namespace Core.Data
 
         public RepoHandler()
         {
-            var dataPath = ConfigHelper.GetConfigValue("AppConfig", "DataPfad");
-            var dataName = ConfigHelper.GetConfigValue("AppConfig", "DataName") ?? "data.json";
+            var dataPath = ConfigHelper.GetConfigValue("AppConfig", "DataPfad", Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data"));
+            var dataName = ConfigHelper.GetConfigValue("AppConfig", "DataName", $"{nameof(T)}.json");
             _dataFilePath = Path.Combine(dataPath, dataName);
 
             _items = Load() ?? new List<T>();

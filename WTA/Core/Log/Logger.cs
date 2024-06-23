@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Core.Enums;
 using Core.Helper;
 using Core.Model;
 
@@ -35,7 +34,9 @@ namespace Core.Log
 
             if (logConfig.LogToConsole)
             {
-                ConsoleHelper.WriteLine($"{entry.LogTime:HH:mm dd.MM.yyyy} [{entry.Level}] {entry.Message}", LoggerHelper.GetColorForLogLevel(entry.Level));
+                var ca = (!string.IsNullOrEmpty(entry.Caller)) ? $"[{entry.Caller}]" : string.Empty;
+                var li = (entry.LineNumber > 0) ? $"[{entry.LineNumber:D6}]" : string.Empty;
+                ConsoleHelper.WriteLine($"[{entry.LogTime:HH:mm dd.MM.yyyy}]:[{entry.Level}]:[{entry.Message}]:[{ca}]:[{li}]");
             }
 
             if (logConfig.LogToFile)
@@ -49,7 +50,7 @@ namespace Core.Log
             while (!cancellationToken.IsCancellationRequested)
             {
                 await LoggerHelper.ProcessQueue(cancellationToken);
-                await Task.Delay(2000);
+                await Task.Delay(1000);
             }
         }
 

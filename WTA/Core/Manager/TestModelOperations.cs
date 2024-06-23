@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Core.Data;
-using Core.Enums;
 using Core.Helper;
 using Core.Model;
 
@@ -18,7 +17,7 @@ namespace Core.Manager
                 var newModel = InputHandler.GetTestModelFromUser();
                 if (newModel == null) return;
                 repo.Create(newModel);
-                LoggerHelper.Log($"Created new TestModel with ID: {newModel.ID}", LogLevel.Info);
+                LoggerHelper.Log($"Created new TestModel with ID: {newModel.ID}", LogLevel.Dbug);
             }
             catch (Exception ex)
             {
@@ -84,7 +83,7 @@ namespace Core.Manager
                 var updatedModel = InputHandler.GetTestModelFromUser(model);
                 if (updatedModel == null) return;
                 repo.Update(updatedModel);
-                LoggerHelper.Log($"Updated TestModel with ID: {updatedModel.ID}", LogLevel.Info);
+                LoggerHelper.Log($"Updated TestModel with ID: {updatedModel.ID}", LogLevel.Dbug);
             }
             catch (Exception ex)
             {
@@ -101,7 +100,7 @@ namespace Core.Manager
                 string id = Console.ReadLine();
                 if (id == "/q") return;
                 repo.Delete(id);
-                LoggerHelper.Log($"Deleted TestModel with ID: {id}", LogLevel.Info);
+                LoggerHelper.Log($"Deleted TestModel with ID: {id}", LogLevel.Dbug);
             }
             catch (Exception ex)
             {
@@ -138,7 +137,20 @@ namespace Core.Manager
         {
             ConsoleHelper.WriteLine("Exiting...", ConsoleColor.Cyan);
             repo.Shutdown();
-            Environment.Exit(0);
+            MenuManager.WorkTime = false;
+        }
+
+        public static void Search()
+        {
+            MenuManager.MenuTitle = ConfigHelper.GetConfigValue("MenuConfig", "ASTitle");
+            var menuItems = new Dictionary<char, (string description, Action action)>
+                {
+                    { '1', (ConfigHelper.GetConfigValue("MenuConfig", "SNote1"), ReadAllTestModels) },
+                    { '2', (ConfigHelper.GetConfigValue("MenuConfig", "SNote2"), ReadTestModelById) },
+                    { '3', (ConfigHelper.GetConfigValue("MenuConfig", "SNote3"), SearchTestModels) },
+                    { '0', (ConfigHelper.GetConfigValue("MenuConfig", "GBack"), MenuManager.Back) }
+                };
+            MenuManager.DisplayShowAndSearch(menuItems);
         }
     }
 }

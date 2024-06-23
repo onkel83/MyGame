@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using Core.Enums;
 
 namespace Core.Helper
 {
@@ -14,7 +13,7 @@ namespace Core.Helper
                 if (!Directory.Exists(path))
                 {
                     Directory.CreateDirectory(path);
-                    LoggerHelper.Log($"Directory created: {path}", LogLevel.Info);
+                    LoggerHelper.Log($"Directory created: {path}", LogLevel.Dbug);
                 }
             }
             catch (Exception ex)
@@ -46,6 +45,7 @@ namespace Core.Helper
             try
             {
                 File.WriteAllText(path, content);
+                LoggerHelper.Log($"File written: {path}", LogLevel.Dbug);
             }
             catch (Exception ex)
             {
@@ -59,6 +59,7 @@ namespace Core.Helper
             try
             {
                 await File.WriteAllTextAsync(path, content);
+                LoggerHelper.Log($"File written: {path}", LogLevel.Dbug);
             }
             catch (Exception ex)
             {
@@ -72,6 +73,7 @@ namespace Core.Helper
             try
             {
                 await File.AppendAllTextAsync(path, content);
+                LoggerHelper.Log($"Appended text to file: {path}", LogLevel.Dbug);
             }
             catch (Exception ex)
             {

@@ -2,8 +2,6 @@
 using System.Collections.Concurrent;
 using System.IO;
 using System.Threading.Tasks;
-using Core.Helper;
-using Core.Log;
 using Core.Model;
 
 namespace Core.Helper

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Core.Enums;
 
 namespace Core.Helper
 {
@@ -8,7 +7,7 @@ namespace Core.Helper
     {
         public static void DisplayMenu(string title, Dictionary<char, (string description, Action action)> menuItems)
         {
-            var delimiter = ConfigHelper.GetConfigValue("MenuConfig", "Delimiter") ?? "=";
+            var delimiter = ConfigHelper.GetConfigValue("MenuConfig", "Delimiter", "=");
             int consoleWidth = Console.WindowWidth;
 
             PrintDelimiterLine(delimiter, consoleWidth);
@@ -36,7 +35,7 @@ namespace Core.Helper
             }
             else
             {
-                LoggerHelper.Log($"Invalid menu choice: {choice}", LogLevel.Warn);
+                LoggerHelper.Log($"Invalid menu choice: {choice}", LogLevel.Info);
             }
         }
 
@@ -53,7 +52,7 @@ namespace Core.Helper
 
         private static void PrintMenuItemLine(char choice, string description, string delimiter, int width)
         {
-            string line = $"{delimiter[0]} {choice} - {description} {delimiter[0]}";
+            string line = $"{delimiter[0]} {choice} - {description}";
             Console.WriteLine(line.PadRight(width - 1) + delimiter[0]);
         }
     }

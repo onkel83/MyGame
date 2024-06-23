@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Core.Enums;
 using Core.Log;
 using Core.Model;
 
@@ -41,16 +40,14 @@ namespace Core.Helper
                         // Log to console if enabled
                         if (logConfig.LogToConsole)
                         {
-                            ConsoleHelper.WriteLine($"{entry.LogTime:HH:mm dd.MM.yyyy} [{entry.Level}] {entry.Message}", GetColorForLogLevel(entry.Level));
+                            ConsoleHelper.WriteLine($"[{entry.LogTime:HH:mm dd.MM.yyyy}]:[{entry.Level}]:[{entry.Message}]:[{entry.Caller}]:[{entry.LineNumber:D6}]", GetColorForLogLevel(entry.Level));
                         }
 
                         // Log to file if enabled
                         if (logConfig.LogToFile)
                         {
                             string logFilePath = Path.Combine(logConfig.LogDirectory, $"{DateTime.Now:yyyy-MM}.log");
-                            string CL = string.IsNullOrEmpty(entry.Caller) ? (string.Empty) : $"::[{entry.Caller}]"; 
-                            CL += (entry.LineNumber <= 0 ? string.Empty : $"::[{entry.LineNumber}]");
-                            string logMessage = $"[{entry.LogTime:HH:mm dd.MM.yyyy}]::[{entry.Level}]::[{entry.Message}]{CL}";
+                            string logMessage = $"{entry.LogTime:HH:mm dd.MM.yyyy} [{entry.Level}] {entry.Message}";
                             await FileHelper.AppendTextAsync(logFilePath, logMessage + Environment.NewLine);
                         }
                     }
@@ -59,7 +56,7 @@ namespace Core.Helper
                         ConsoleHelper.WriteLine($"Error processing log action: {ex.Message}", ConsoleColor.Red);
                     }
                 }
-                await Task.Delay(1001);
+                await Task.Delay(1000);
             }
         }
 
@@ -80,5 +77,13 @@ namespace Core.Helper
             CancellationTokenSource.Cancel();
             ProcessingTask.Wait();
         }
+    }
+
+    public enum LogLevel
+    {
+        Crit,
+        Warn,
+        Info,
+        Dbug
     }
 }

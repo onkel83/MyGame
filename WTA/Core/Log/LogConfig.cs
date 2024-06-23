@@ -1,13 +1,13 @@
-﻿using Core.Enums;
-using Core.Helper;
+﻿using Core.Helper;
 using System;
+using System.IO;
 
 namespace Core.Log
 {
     public class LogConfig
     {
         private static LogConfig _instance = new LogConfig();
-        private LogLevel _level = LogLevel.Dbug;
+        private LogLevel _level;
 
         public bool LogToFile { get; set; }
         public bool LogToConsole { get; set; }
@@ -16,7 +16,10 @@ namespace Core.Log
 
         private LogConfig()
         {
+            LogToConsole = false;
+            LogToFile = false;
             LogDirectory = string.Empty;
+            MinimumLogLevel = LogLevel.Dbug;
             LoadConfig();
         }
 
@@ -28,9 +31,9 @@ namespace Core.Log
         private void LoadConfig()
         {
             LogToFile = ConfigHelper.GetConfigValue("LogConfig", "LogToFile") == "true";
-            LogToConsole = ConfigHelper.GetConfigValue("LogConfig", "LogToConsole") == "true";
-            LogDirectory = ConfigHelper.GetConfigValue("LogConfig", "LogDirectory") ?? "./logs";
-            Enum.TryParse(ConfigHelper.GetConfigValue("LogConfig", "MinimumLogLevel"), out _level);
+            LogToConsole = ConfigHelper.GetConfigValue("LogConfig", "LogToConsole") == "false";
+            LogDirectory = ConfigHelper.GetConfigValue("LogConfig", "LogDirectory",$"{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs")}");
+            Enum.TryParse(ConfigHelper.GetConfigValue("LogConfig", "MinimumLogLevel", "Info"), out _level);
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Core.Helper
     {
         public static void PrintTable(List<T> items, string[]? headers = null)
         {
-            var borderChars = ConfigHelper.GetConfigValue("TableConfig", "BorderChars") ?? "═║╔╗╚╝╬╦╩╬╟╢";
+            var borderChars = ConfigHelper.GetConfigValue("TableConfig", "BorderChars", "═║╔╗╚╝╬╦╩╬╟╢");
             var borders = borderChars.ToCharArray();
 
             var borderTop = borders[0];
