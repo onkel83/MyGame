@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Core.Config;
-using Core.Enum;
-using Core.Log;
+using Core.Enums;
 
 namespace Core.Helper
 {
@@ -10,31 +8,20 @@ namespace Core.Helper
     {
         public static void DisplayMenu(string title, Dictionary<char, (string description, Action action)> menuItems)
         {
-            // Load delimiter configuration
-            var delimiter = ConfigManager.GetConfigValue("MenuConfig", "Delimiter") ?? "=";
-
-            // Calculate console width
+            var delimiter = ConfigHelper.GetConfigValue("MenuConfig", "Delimiter") ?? "=";
             int consoleWidth = Console.WindowWidth;
 
-            // Print top delimiter line
             PrintDelimiterLine(delimiter, consoleWidth);
-
-            // Print title line
             PrintTitleLine(title, delimiter, consoleWidth);
-
-            // Print second delimiter line
             PrintDelimiterLine(delimiter, consoleWidth);
 
-            // Print menu items
             foreach (var menuItem in menuItems)
             {
                 PrintMenuItemLine(menuItem.Key, menuItem.Value.description, delimiter, consoleWidth);
             }
 
-            // Print bottom delimiter line
             PrintDelimiterLine(delimiter, consoleWidth);
 
-            // Read user input and execute corresponding action
             char choice = Console.ReadKey(true).KeyChar;
             if (menuItems.ContainsKey(choice))
             {
@@ -44,12 +31,12 @@ namespace Core.Helper
                 }
                 catch (Exception ex)
                 {
-                    Logger.Instance.Log($"Error executing action: {ex.Message}", LogLevel.Crit);
+                    LoggerHelper.Log($"Error executing action: {ex.Message}", LogLevel.Crit);
                 }
             }
             else
             {
-                Logger.Instance.Log($"Invalid menu choice: {choice}", LogLevel.Warn);
+                LoggerHelper.Log($"Invalid menu choice: {choice}", LogLevel.Warn);
             }
         }
 

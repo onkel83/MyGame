@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Core.Enum;
+using Core.Enums;
 using Core.Helper;
 using Core.Model;
 
@@ -35,22 +35,21 @@ namespace Core.Log
 
             if (logConfig.LogToConsole)
             {
-                ConsoleHelper.WriteLogEntry(entry);
+                ConsoleHelper.WriteLine($"{entry.LogTime:HH:mm dd.MM.yyyy} [{entry.Level}] {entry.Message}", LoggerHelper.GetColorForLogLevel(entry.Level));
             }
 
             if (logConfig.LogToFile)
             {
-                QueueHelper.Enqueue(entry);
+                LoggerHelper.Log(entry.Message, level, entry.Caller, entry.LineNumber);
             }
         }
 
-        public async Task ProcessQueue(CancellationToken cancellationToken)
+        private async Task ProcessQueue(CancellationToken cancellationToken)
         {
-            var logConfig = LogConfig.GetInstance();
             while (!cancellationToken.IsCancellationRequested)
             {
-                QueueHelper.ProcessQueue(logConfig.LogDirectory)?.Wait();
-                await Task.Delay(1000);
+                await LoggerHelper.ProcessQueue(cancellationToken);
+                await Task.Delay(2000);
             }
         }
 

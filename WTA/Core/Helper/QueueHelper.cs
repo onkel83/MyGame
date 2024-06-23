@@ -1,7 +1,10 @@
-﻿using Core.Model;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Threading.Tasks;
+using Core.Helper;
+using Core.Log;
+using Core.Model;
 
 namespace Core.Helper
 {
@@ -14,18 +17,14 @@ namespace Core.Helper
             LogQueue.Enqueue(entry);
         }
 
-        public static Task? ProcessQueue(string logDirectory)
+        public static async Task ProcessQueue(string logDirectory)
         {
-
-            while (LogQueue.TryDequeue(out LogEntry entry))
+            while (LogQueue.TryDequeue(out var entry))
             {
-                Task.Run(() =>
-                {
-                    FileHelper.WriteLogEntry(entry, logDirectory);
-
-                }).Wait();
+                string logFilePath = Path.Combine(logDirectory, $"{DateTime.Now:yyyy-MM}.log");
+                string logMessage = $"{entry.LogTime:HH:mm dd.MM.yyyy} [{entry.Level}] {entry.Message}";
+                await FileHelper.WriteFileAsync(logFilePath, logMessage + Environment.NewLine);
             }
-            return null;
         }
     }
 }

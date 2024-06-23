@@ -1,21 +1,20 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
-using Core.Log;
-using Core.Helper;
-using Core.Enum;
+using Core.Enums;
 
-namespace Core.Config
+namespace Core.Helper
 {
-    public class ConfigManager
+    public static class ConfigHelper
     {
         private static readonly string ConfigDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configs");
-        private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> Configs = new ConcurrentDictionary<string, ConcurrentDictionary<string, string>>();
+        private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _Configs = new ConcurrentDictionary<string, ConcurrentDictionary<string, string>>();
         private static readonly FileSystemWatcher FileWatcher = new FileSystemWatcher(ConfigDirectory);
 
-        static ConfigManager()
+        public static ConcurrentDictionary<string, ConcurrentDictionary<string, string>> Configs { get => _Configs;}
+
+        static ConfigHelper()
         {
             FileHelper.EnsureDirectoryExists(ConfigDirectory);
             LoadAllConfigs();
@@ -34,7 +33,7 @@ namespace Core.Config
             }
             catch (Exception ex)
             {
-                Logger.Instance.Log($"Error loading all configs: {ex.Message}", LogLevel.Crit);
+                LoggerHelper.Log($"Error loading all configs: {ex.Message}", LogLevel.Crit);
             }
         }
 
@@ -44,25 +43,29 @@ namespace Core.Config
 
             if (!File.Exists(configFilePath))
             {
-                Logger.Instance.Log($"Config file not found: {configFilePath}. Creating default config.", LogLevel.Info);
+                LoggerHelper.Log($"Config file not found: {configFilePath}. Creating default config.", LogLevel.Dbug, nameof(ConfigHelper.LoadConfig), 38);
                 SaveConfig(configName, new ConcurrentDictionary<string, string>());
                 return new ConcurrentDictionary<string, string>();
             }
 
             try
             {
-                string configJson = File.ReadAllText(configFilePath);
+                string configJson = FileHelper.ReadFile(configFilePath);
                 var config = JsonConvert.DeserializeObject<ConcurrentDictionary<string, string>>(configJson);
                 if (config != null)
                 {
-                    Configs[configName] = config;
+                    _Configs[configName] = config;
                     return config;
                 }
-                else { return new ConcurrentDictionary<string, string>(); }
+                else
+                {
+                    LoggerHelper.Log($"No Config Key,Value-Pair found in {configFilePath}", LogLevel.Dbug, nameof(ConfigHelper.LoadConfig), 38);
+                    return new ConcurrentDictionary<string, string>();
+                }
             }
             catch (Exception ex)
             {
-                Logger.Instance.Log($"Error loading config {configName}: {ex.Message}", LogLevel.Crit);
+                LoggerHelper.Log($"Error loading config {configName}: {ex.Message}", LogLevel.Crit);
                 return new ConcurrentDictionary<string, string>();
             }
         }
@@ -73,12 +76,12 @@ namespace Core.Config
             {
                 string configFilePath = Path.Combine(ConfigDirectory, $"{configName}.json");
                 string configJson = JsonConvert.SerializeObject(config, Formatting.Indented);
-                File.WriteAllText(configFilePath, configJson);
-                Configs[configName] = config;
+                FileHelper.WriteFile(configFilePath, configJson);
+                _Configs[configName] = config;
             }
             catch (Exception ex)
             {
-                Logger.Instance.Log($"Error saving config {configName}: {ex.Message}", LogLevel.Crit);
+                LoggerHelper.Log($"Error saving config {configName}: {ex.Message}", LogLevel.Crit);
             }
         }
 
@@ -86,14 +89,14 @@ namespace Core.Config
         {
             try
             {
-                if (Configs.TryGetValue(configName, out var config) && config.TryGetValue(key, out var value))
+                if (_Configs.TryGetValue(configName, out var config) && config.TryGetValue(key, out var value))
                 {
                     return value;
                 }
             }
             catch (Exception ex)
             {
-                Logger.Instance.Log($"Error getting config value {key} from {configName}: {ex.Message}", LogLevel.Crit);
+                LoggerHelper.Log($"Error getting config value {key} from {configName}: {ex.Message}", LogLevel.Crit);
             }
             return string.Empty;
         }
@@ -113,7 +116,7 @@ namespace Core.Config
             }
             catch (Exception ex)
             {
-                Logger.Instance.Log($"Error setting config value {key} in {configName}: {ex.Message}", LogLevel.Crit);
+                LoggerHelper.Log($"Error setting config value {key} in {configName}: {ex.Message}", LogLevel.Crit);
             }
         }
 
@@ -132,7 +135,7 @@ namespace Core.Config
             }
             catch (Exception ex)
             {
-                Logger.Instance.Log($"Error initializing file watcher: {ex.Message}", LogLevel.Crit);
+                LoggerHelper.Log($"Error initializing file watcher: {ex.Message}", LogLevel.Crit);
             }
         }
 
@@ -141,12 +144,12 @@ namespace Core.Config
             try
             {
                 string configName = Path.GetFileNameWithoutExtension(e.FullPath);
-                Logger.Instance.Log($"Config file changed: {configName}. Reloading config.", LogLevel.Info);
+                LoggerHelper.Log($"Config file changed: {configName}. Reloading config.", LogLevel.Dbug);
                 LoadConfig(configName);
             }
             catch (Exception ex)
             {
-                Logger.Instance.Log($"Error reloading config on file change: {ex.Message}", LogLevel.Crit);
+                LoggerHelper.Log($"Error reloading config on file change: {ex.Message}", LogLevel.Crit);
             }
         }
     }

@@ -1,9 +1,9 @@
 ﻿using System;
-using Core.Enum;
+using Core.Enums;
 
 namespace Core.Model
 {
-    public class LogEntry
+    public class LogEntry : BaseModel
     {
         public DateTime LogTime { get; set; } = DateTime.Now;
         public string Message { get; set; } = string.Empty;

@@ -1,6 +1,6 @@
-﻿using Core.Model;
+﻿using System;
 
-namespace WTA_Test
+namespace Core.Model
 {
     public class TestModel : BaseModel
     {
@@ -12,6 +12,6 @@ namespace WTA_Test
 
         public decimal Pause { get; set; } = 0;
 
-        public double WorkTime { get => Math.Round((Ende - Start).TotalHours - ((double)Pause),2); }
+        public double WorkTime => (Ende - Start).TotalHours - (double)Pause;
     }
 }

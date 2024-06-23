@@ -1,227 +1,107 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Core.Config;
 using Core.Helper;
-using Core.Log;
-using Core.Enum;
 using Core.Model;
+using Core.Enums;
 
 namespace Core.Data
 {
     public class RepoHandler<T> where T : BaseModel
     {
-        private readonly string _filePath;
-        private readonly ConcurrentQueue<Action> _queue = new ConcurrentQueue<Action>();
-        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
-        private List<T> _items = new List<T>();
-        private int _nextId = 1;
-        private readonly object _lock = new object();
+        private readonly List<T> _items;
+        private readonly string _dataFilePath;
 
         public RepoHandler()
         {
-            string dataPath = ConfigManager.GetConfigValue("AppConfig", "DataPfad");
-            _filePath = Path.Combine(dataPath, $"{typeof(T).Name}.json");
-            FileHelper.EnsureDirectoryExists(dataPath);
-            Load();
+            var dataPath = ConfigHelper.GetConfigValue("AppConfig", "DataPfad");
+            var dataName = ConfigHelper.GetConfigValue("AppConfig", "DataName") ?? "data.json";
+            _dataFilePath = Path.Combine(dataPath, dataName);
 
-            var fileWatcher = new FileSystemWatcher(dataPath)
-            {
-                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName,
-                Filter = $"{typeof(T).Name}.json",
-                IncludeSubdirectories = false,
-                EnableRaisingEvents = true
-            };
-            fileWatcher.Changed += (s, e) => Load();
-
-            Task.Run(() => ProcessQueue(_cancellationTokenSource.Token));
-        }
-
-        private void ProcessQueue(CancellationToken token)
-        {
-            while (!token.IsCancellationRequested)
-            {
-                if (_queue.TryDequeue(out var action))
-                {
-                    lock (_lock)
-                    {
-                        try
-                        {
-                            action();
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Instance.Log($"Error processing queue action: {ex.Message}", LogLevel.Crit);
-                        }
-                    }
-                }
-                else
-                {
-                    Thread.Sleep(100);
-                }
-            }
+            _items = Load() ?? new List<T>();
         }
 
         public void Create(T item)
         {
-            Enqueue(() =>
-            {
-                try
-                {
-                    item.ID = _nextId.ToString("D6");
-                    _nextId++;
-                    _items.Add(item);
-                    Save();
-                    Logger.Instance.Log($"Created item with ID: {item.ID}", LogLevel.Info);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Log($"Error creating item: {ex.Message}", LogLevel.Crit);
-                }
-            });
-        }
-
-        public void Update(T item)
-        {
-            Enqueue(() =>
-            {
-                try
-                {
-                    var existingItem = _items.FirstOrDefault(i => i.ID == item.ID);
-                    if (existingItem != null)
-                    {
-                        _items.Remove(existingItem);
-                        _items.Add(item);
-                        Save();
-                        Logger.Instance.Log($"Updated item with ID: {item.ID}", LogLevel.Info);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Log($"Error updating item: {ex.Message}", LogLevel.Crit);
-                }
-            });
-        }
-
-        public void Delete(string id)
-        {
-            Enqueue(() =>
-            {
-                try
-                {
-                    var item = _items.FirstOrDefault(i => i.ID == id);
-                    if (item != null)
-                    {
-                        _items.Remove(item);
-                        Save();
-                        Logger.Instance.Log($"Deleted item with ID: {item.ID}", LogLevel.Info);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Log($"Error deleting item: {ex.Message}", LogLevel.Crit);
-                }
-            });
-        }
-
-        public List<T> ReadAll()
-        {
-            lock (_lock)
-            {
-                return new List<T>(_items);
-            }
+            item.ID = (_items.Count > 0 ? _items.Max(x => int.Parse(x.ID)) + 1 : 1).ToString("D6");
+            _items.Add(item);
+            Save();
         }
 
         public T ReadOne(string id)
         {
-            lock (_lock)
+            return _items.FirstOrDefault(x => x.ID == id);
+        }
+
+        public List<T> ReadAll()
+        {
+            return _items;
+        }
+
+        public void Update(T item)
+        {
+            var index = _items.FindIndex(x => x.ID == item.ID);
+            if (index >= 0)
             {
-                return _items.FirstOrDefault(i => i.ID == id);
+                _items[index] = item;
+            }
+            else
+            {
+                _items.Add(item);
+            }
+            Save();
+        }
+
+        public void Delete(string id)
+        {
+            var item = _items.FirstOrDefault(x => x.ID == id);
+            if (item != null)
+            {
+                _items.Remove(item);
+                Save();
             }
         }
 
         public List<T> Search(Func<T, bool> predicate)
         {
-            lock (_lock)
+            return _items.Where(predicate).ToList();
+        }
+
+        public void Save()
+        {
+            try
             {
-                return _items.Where(predicate).ToList();
+                var jsonData = JsonConvert.SerializeObject(_items, Formatting.Indented);
+                FileHelper.WriteFile(_dataFilePath, jsonData);
+            }
+            catch (Exception ex)
+            {
+                LoggerHelper.Log($"Error saving data: {ex.Message}", LogLevel.Crit);
             }
         }
 
-        public void ResetIds()
+        private List<T> Load()
         {
-            Enqueue(() =>
+            try
             {
-                try
+                if (FileHelper.FileExists(_dataFilePath))
                 {
-                    _items = _items.OrderBy(i => Convert.ToInt32(i.ID)).ToList();
-                    _nextId = 1;
-                    foreach (var item in _items)
-                    {
-                        item.ID = _nextId.ToString("D6");
-                        _nextId++;
-                    }
-                    Save();
-                    Logger.Instance.Log("Reset IDs and redistributed them.", LogLevel.Info);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Log($"Error resetting IDs: {ex.Message}", LogLevel.Crit);
-                }
-            });
-        }
-
-        private void Enqueue(Action action)
-        {
-            _queue.Enqueue(action);
-        }
-
-        private void Load()
-        {
-            if (!File.Exists(_filePath)) return;
-
-            lock (_lock)
-            {
-                try
-                {
-                    string json = File.ReadAllText(_filePath);
-                    _items = JsonConvert.DeserializeObject<List<T>>(json) ?? new List<T>();
-                    ResetIds();
-                    Logger.Instance.Log($"Loaded data from {_filePath}", LogLevel.Info);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Log($"Error loading data: {ex.Message}", LogLevel.Crit);
+                    var jsonData = FileHelper.ReadFile(_dataFilePath);
+                    return JsonConvert.DeserializeObject<List<T>>(jsonData)??new List<T>();
                 }
             }
-        }
-
-        private void Save()
-        {
-            lock (_lock)
+            catch (Exception ex)
             {
-                try
-                {
-                    string json = JsonConvert.SerializeObject(_items, Formatting.Indented);
-                    File.WriteAllText(_filePath, json);
-                    Logger.Instance.Log($"Saved data to {_filePath}", LogLevel.Info);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Log($"Error saving data: {ex.Message}", LogLevel.Crit);
-                }
+                LoggerHelper.Log($"Error loading data: {ex.Message}", LogLevel.Crit);
             }
+            return new List<T>();
         }
 
         public void Shutdown()
         {
-            _cancellationTokenSource.Cancel();
-            Logger.Instance.Log($"RepoHandler for {typeof(T).Name} shut down.", LogLevel.Info);
+            Save();
         }
     }
 }

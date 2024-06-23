@@ -1,0 +1,6 @@
+{
+  "LogToFile": "true",
+  "LogToConsole": "true",
+  "LogDirectory": "./logs",
+  "MinimumLogLevel": "Warn"
+}

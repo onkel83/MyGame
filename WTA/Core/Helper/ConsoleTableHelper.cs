@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Core.Config;
-using Core.Enum;
-using Core.Log;
 using Core.Model;
 
 namespace Core.Helper
@@ -13,31 +10,27 @@ namespace Core.Helper
     {
         public static void PrintTable(List<T> items, string[]? headers = null)
         {
-            // Configurations for borders
-            var borderTop = '═';
-            var borderBottom = '═';
-            var borderLeft = '║';
-            var borderRight = '║';
-            var borderCornerTopLeft = '╔';
-            var borderCornerTopRight = '╗';
-            var borderCornerBottomLeft = '╚';
-            var borderCornerBottomRight = '╝';
-            var borderJoint = '╬';
-            var borderHorizontal = '╦';
-            var borderVertical = '╩';
-            var borderCross = '╬';
-            var borderRowSeparator = '╟';
-            var borderColumnSeparator = '╢';
+            var borderChars = ConfigHelper.GetConfigValue("TableConfig", "BorderChars") ?? "═║╔╗╚╝╬╦╩╬╟╢";
+            var borders = borderChars.ToCharArray();
 
-            // Load border configurations from ConfigManager
-            LoadBorderConfig(ref borderTop, ref borderBottom, ref borderLeft, ref borderRight,
-                ref borderCornerTopLeft, ref borderCornerTopRight, ref borderCornerBottomLeft,
-                ref borderCornerBottomRight, ref borderJoint, ref borderHorizontal, ref borderVertical,
-                ref borderCross, ref borderRowSeparator, ref borderColumnSeparator);
+            var borderTop = borders[0];
+            var borderBottom = borders[0];
+            var borderLeft = borders[1];
+            var borderRight = borders[1];
+            var borderCornerTopLeft = borders[2];
+            var borderCornerTopRight = borders[3];
+            var borderCornerBottomLeft = borders[4];
+            var borderCornerBottomRight = borders[5];
+            var borderJoint = borders[6];
+            var borderHorizontal = borders[7];
+            var borderVertical = borders[8];
+            var borderCross = borders[9];
+            var borderRowSeparator = borders[10];
+            var borderColumnSeparator = borders[11];
 
-            // Determine column widths
             var columnWidths = new Dictionary<string, int>();
             var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
             foreach (var prop in properties)
             {
                 var header = headers?.FirstOrDefault(h => h.Equals(prop.Name, StringComparison.InvariantCultureIgnoreCase)) ?? prop.Name;
@@ -46,7 +39,6 @@ namespace Core.Helper
                 columnWidths[prop.Name] = Math.Max(maxLength, headerLength);
             }
 
-            // Print the header if available
             if (headers != null && headers.Length > 0)
             {
                 PrintLine(borderCornerTopLeft, borderTop, borderHorizontal, borderCornerTopRight, columnWidths);
@@ -58,7 +50,6 @@ namespace Core.Helper
                 PrintLine(borderCornerTopLeft, borderTop, borderHorizontal, borderCornerTopRight, columnWidths);
             }
 
-            // Print each item
             foreach (var item in items)
             {
                 var values = properties.Select(p => p.GetValue(item)?.ToString() ?? string.Empty).ToArray();
@@ -106,42 +97,6 @@ namespace Core.Helper
             for (int i = 0; i < text.Length; i += width)
             {
                 yield return text.Substring(i, Math.Min(width, text.Length - i));
-            }
-        }
-
-        private static void LoadBorderConfig(ref char borderTop, ref char borderBottom, ref char borderLeft, ref char borderRight,
-            ref char borderCornerTopLeft, ref char borderCornerTopRight, ref char borderCornerBottomLeft, ref char borderCornerBottomRight,
-            ref char borderJoint, ref char borderHorizontal, ref char borderVertical, ref char borderCross,
-            ref char borderRowSeparator, ref char borderColumnSeparator)
-        {
-            try
-            {
-                var borderChars = ConfigManager.GetConfigValue("TableConfig", "BorderChars");
-                if (!string.IsNullOrEmpty(borderChars))
-                {
-                    var chars = borderChars.ToCharArray();
-                    if (chars.Length >= 14)
-                    {
-                        borderTop = chars[0];
-                        borderBottom = chars[1];
-                        borderLeft = chars[2];
-                        borderRight = chars[3];
-                        borderCornerTopLeft = chars[4];
-                        borderCornerTopRight = chars[5];
-                        borderCornerBottomLeft = chars[6];
-                        borderCornerBottomRight = chars[7];
-                        borderJoint = chars[8];
-                        borderHorizontal = chars[9];
-                        borderVertical = chars[10];
-                        borderCross = chars[11];
-                        borderRowSeparator = chars[12];
-                        borderColumnSeparator = chars[13];
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.Log($"Error loading border config: {ex.Message}", LogLevel.Crit);
             }
         }
     }
